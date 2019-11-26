@@ -1,23 +1,20 @@
 import pylab
 import copy
 from sympy import diff, symbols, cos, sin
-import numpy as np
-from scipy import optimize
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy.optimize import LinearConstraint
 from scipy.optimize import NonlinearConstraint
 from scipy.optimize import minimize
 from sympy.solvers.solveset import linsolve
-from scipy.optimize import rosen, rosen_der, rosen_hess, rosen_hess_prod
-from matplotlib import cm
-
+from scipy.optimize import rosen_der, rosen_hess
 
 print_Hesse_matrix = True
 print_Jakobi_matrix = True
 step = 0
 x_l = 0
 y_l = 0
+
 
 def graphics(x, y, z, point=None, with_point=None):
     fig = pylab.figure()
@@ -35,13 +32,13 @@ def graphics(x, y, z, point=None, with_point=None):
     new_z = copy.deepcopy(z)
     for i_index, x_item in enumerate(new_x[0]):
         for j_index, y_item in enumerate(new_y):
-            if (g1([x_item, y_item[0]]) > linear_r_s[0]) or (g2([x_item, y_item[0]]) > linear_r_s[1])\
+            if (g1([x_item, y_item[0]]) > linear_r_s[0]) or (g2([x_item, y_item[0]]) > linear_r_s[1]) \
                     or (g3([x_item, y_item[0]]) > non_linear_r_s[0]):
-                new_z[int((y_item[0]-y_l)/step)][int((x_item-x_l)/step)] = np.nan
+                new_z[int((y_item[0] - y_l) / step)][int((x_item - x_l) / step)] = np.nan
     axes.plot_surface(new_x, new_y, new_z, color="green")
     if with_point:
-        #axes.plot(*point, func([point[0],point[1]]), 'r*', markersize=20)
-        axes.scatter(point[0],point[1],func([point[0],point[1]]), color='yellow', s=40, marker='o')
+        # axes.scatter(-0.2, -0.4, func([-0.2, -0.4]), color='black', s=40, marker='o')
+        axes.scatter(point[0], point[1], func([point[0], point[1]]), color='yellow', s=40, marker='o')
 
     pylab.show()
 
@@ -70,38 +67,43 @@ def get_intervals():
 
 def func(point):
     x, y = point
-    #return 50 * (np.sin(3 * x) - y) ** 2 + 9 * x ** 2
-    return 3*(y+x**2)**2 + (x**2 - 1)**2
+    # return 50 * (np.sin(3 * x) - y) ** 2 + 9 * x ** 2
+    return 3 * (y + x ** 2) ** 2 + (x ** 2 - 1) ** 2
+    # return x**2 + y**2
+
 
 def symb_func(point):
     x, y = point
-    return 3*(y+x**2)**2 + (x**2 - 1)**2
+    return 3 * (y + x ** 2) ** 2 + (x ** 2 - 1) ** 2
 
 
 def g1(point):
     x, y = point
-    return y + 0.5 * x
-    #return y + x
+    # return y + x
+    return y - x
 
 
 def g2(point):
     x, y = point
-    return y
-    #return y - x
+    # return y
+    return y + x
 
 
 def g3(point):
     x, y = point
-    #return y ** 3 - x
-    return -10 * (x + 1)**2 - (y - 2)**2
+    # return y ** 3 - x
+    return -10 * (x + 1) ** 2 - (y - 2) ** 2
 
 
 def linear_inequality_right_side():
-    return [-0.5, -0.8]
+    # return [-0.5, -0.8]
+    return [-1, -1]
 
 
 def non_linear_inequality_right_side():
-    return [-12]
+    return [-20]
+    # return [-12]
+
 
 def makeData(x, y, step):
     x_ = np.arange(x[0], x[1], step[0])
@@ -132,9 +134,9 @@ def get_derivative():
 
 
 def cons_f(x):
-    #return [x[1] ** 3 - x[0] + 1, x[1] ** 3 - x[0] + 1]
-    return [-10 * (x[0] + 1)**2 - (x[1] - 2)**2]
-    #return [-10 * (x[0] + 1)**2 - (x[1] - 2)**2]
+    # return [x[1] ** 3 - x[0] + 1, x[1] ** 3 - x[0] + 1]
+    return [-10 * (x[0] + 1) ** 2 - (x[1] - 2) ** 2]
+    # return [-10 * (x[0] + 1)**2 - (x[1] - 2)**2]
 
 
 def cons_J(x):
@@ -155,7 +157,7 @@ def cons_J(x):
         print("#\t\t\tJakobi matrix")
         print("#" * 50)
         print(Jakobi)
-        print("\n\n")
+        print("\n")
         print_Jakobi_matrix = False
     results = []
     for Jakobi_item in Jakobi:
@@ -211,19 +213,21 @@ def intersection():
 
 
 def get_lambda(x_input):
-    eps = 0.05
+    r_s_l = linear_inequality_right_side()
+    r_s_nl = non_linear_inequality_right_side()
+    eps = 0.01
     active_intersection = []
     x, y = symbols('x y')
     g = [g1([x, y]), g2([x, y]), g3([x, y])]
     linear_r_s = linear_inequality_right_side()
     non_linear_r_s = non_linear_inequality_right_side()
     print("#" * 50)
-    print("#\t\tAll constraints", " " * 25, "#")
+    print("#\t\t\tAll constraints", " " * 20, "#")
     print("#" * 50)
-    print(g[0])
-    print(g[1])
-    print(g[2])
-    print("\n\n")
+    print(g[0], " <= ", r_s_l[0])
+    print(g[1], " <= ", r_s_l[1])
+    print(g[2], " <= ", r_s_nl[0])
+    print("\n")
     if -eps <= g[0].subs({x: x_input[0], y: x_input[1]}) - linear_r_s[0] <= eps:
         active_intersection.append(g[0])
     if -eps <= g[1].subs({x: x_input[0], y: x_input[1]}) - linear_r_s[1] <= eps:
@@ -237,14 +241,15 @@ def get_lambda(x_input):
     for intersection in active_intersection:
         print(intersection)
     print("\n\n")
+
     L = lambda_[0] * symb_func([x, y])
     for index, inters in enumerate(active_intersection):
-        L = L + lambda_[index + 1] * g[index]
+        L = L + lambda_[index + 1] * active_intersection[index]
     print("#" * 50)
-    print("#\t\tLagrange function", " " * 23, "#")
+    print("#\t\tLagrange function", " " * 24, "#")
     print("#" * 50)
     print(L)
-    print("\n\n")
+    print("\n")
     d_f_x = L.diff(x)
     d_f_y = L.diff(y)
     d_f_x_in_point = d_f_x.subs({x: x_input[0], y: x_input[1]})
@@ -258,7 +263,8 @@ def get_lambda(x_input):
     print("\nINFO: Solving a linear system with respect to lambda...")
     solve = linsolve([d_f_x_in_point, d_f_y_in_point], lambda_)
     print(solve)
-    print("INFO: Solving a linear system with respect to lambda...DONE")
+    print("INFO: Solving a linear system with respect to lambda...DONE\n")
+    return solve
 
 
 def main():
@@ -268,8 +274,7 @@ def main():
         return -1
     x, y, z = makeData(input_data[0:2], input_data[2:4], input_data[4:])
 
-    #graphics(x, y, z)
-
+    graphics(x, y, z)
     non_linear_r_s = non_linear_inequality_right_side()
 
     print("Enter the first approximation point:")
@@ -280,31 +285,28 @@ def main():
     print("#\t\tMatrix of linear constraints", " " * 11, "#")
     print("#" * 50)
     print(matr)
-    print("\n\n")
+    print("\n")
     print("#" * 50)
-    print("#\t\tRight side of linear inequalities", " " * 6, "#")
+    print("#\t\tRight side of inequalities", " " * 13, "#")
     print("#" * 50)
-    print(r_s)
-    print("\n\n")
+    print(r_s + non_linear_r_s)
+    print("\n")
     linear_constraint = LinearConstraint(matr, [-np.inf, -np.inf], r_s)
     nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, non_linear_r_s[0],
                                                jac=cons_J, hess=cons_H)
     x0 = np.array([x_i, y_i])
-    print("#"*50)
-    print("#\tPreparation of conditions with restrictions...")
-    print("#" * 50)
-    print("\n")
+
     res = minimize(func, x0, method='trust-constr', jac=rosen_der, hess=rosen_hess,
-                   constraints=[linear_constraint, nonlinear_constraint],
-                   options={'verbose': 1})
+                   constraints=[linear_constraint, nonlinear_constraint], bounds=((float(input_data[0]),
+                                                                                   float(input_data[1])),
+                                                                                  (float(input_data[2]),
+                                                                                   float(input_data[3]))),
+                   options={'verbose': 2, 'gtol': 1e-10, 'xtol': 1e-10, 'barrier_tol': 1e-10, 'maxiter': 1000})
     print("INFO: The value of the found minimum")
     print(res.x)
     opt = res.x.reshape(-1, 1)
     get_lambda(res.x)
     graphics(x, y, z, point=opt, with_point=True)
-    print("g1 : ", g1([-0.31812601, -0.80041335]))
-    print("g2 : ", g2([-0.31812601, -0.80041335]))
-    print("g3 : ", g3([-0.31812601, -0.80041335]))
 
 
 if __name__ == "__main__":
